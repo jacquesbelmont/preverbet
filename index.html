@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Previsão de Futebol</title>
+  </head>
+  <body>
+    <h1>Previsão de Futebol</h1>
+    <form>
+      <label for="team">Time:</label>
+      <input type="text" id="team" name="team" required /><br /><br />
+
+      <label for="numGames">Número de jogos:</label>
+      <input type="number" id="numGames" name="numGames" min="1" max="100" value="50" required /><br /><br />
+
+      <label for="predictionModel">Modelo de previsão:</label>
+      <select id="predictionModel" name="predictionModel">
+        <option value="linearRegression">Regressão linear</option>
+        <option value="logisticRegression">Regressão logística</option>
+      </select><br /><br />
+
+      <button type="submit" id="submitBtn">Prever</button>
+    </form>
+
+    <div id="result"></div>
+
+    <script src="main.js"></script>
+  </body>
+</html>
