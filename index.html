@@ -1,58 +1,88 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Previsão de Futebol</title>
-
-    <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.1.3/css/bootstrap.min.css" integrity="sha512-l8aPpGMeHsKjEbtCrOzWg9B6ZbS6S/Yw6pmzgC8N4m4n4H4Mv6Er/CDW8ULlL5Z7h3qjKuIk7V8QlzR5F7VhCA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-
-    <!-- jQuery -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-4vMVsU89jlj7kj4CP+JL4fu6vYvW0X8VfUV/2j2QJwXBazN/0rGpZlgOPljG6fugJWvN9R1KJFJRXtNpJvOxGg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="style.css" />
+    <title>API da Betfair</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   </head>
   <body>
-    <div class="container">
-      <h1>Previsão de Futebol</h1>
-      <form id="predictionForm">
-        <div class="form-group">
-          <label for="team">Time:</label>
-          <input type="text" class="form-control" id="team" name="team" required />
-        </div>
+    <canvas id="chart"></canvas>
 
-        <div class="form-group">
-          <label for="numGames">Número de jogos:</label>
-          <input type="number" class="form-control" id="numGames" name="numGames" min="1" max="100" value="50" required />
-        </div>
+    <?php
+    // incluir o arquivo jsonrpc.php para enviar a solicitação para a API da Betfair
+    require_once 'jsonrpc.php';
 
-        <div class="form-group">
-          <label for="predictionModel">Modelo de previsão:</label>
-          <select class="form-control" id="predictionModel" name="predictionModel">
-            <option value="linearRegression">Regressão linear</option>
-            <option value="logisticRegression">Regressão logística</option>
-          </select>
-        </div>
+    // definir a carga JSON-RPC para a solicitação
+    $request = array(
+      'jsonrpc' => '2.0',
+      'method' => 'SportsAPING/v1.0/listEvents',
+      'params' => array(
+        'filter' => array(
+          'eventTypeIds' => array(1), // 1 = futebol
+          'marketCountries' => array('GB'), // Reino Unido
+          'marketTypeCodes' => array('MATCH_ODDS'), // correspondências com odds
+          'marketStartTime' => array(
+            'from' => date('c', strtotime('yesterday')), // ontem
+            'to' => date('c', strtotime('today')), // hoje
+          ),
+        ),
+        'sort' => 'FIRST_TO_START',
+        'maxResults' => 5, // 5 jogos
+        'marketProjection' => array('RUNNER_DESCRIPTION'),
+      ),
+      'id' => 1,
+    );
 
-        <button type="submit" class="btn btn-primary" id="submitBtn">Prever</button>
-      </form>
+    // enviar a solicitação para a API da Betfair
+    $response = jsonrpc($request);
 
-      <div id="result" class="mt-3"></div>
-    </div>
+    // extrair os resultados da resposta
+    $results = $response['result'];
 
-    <script src="main.js"></script>
+    // contar o número de jogos por competição
+    $competitions = array();
+    foreach ($results as $result) {
+      $competitionName = $result['event']['competition']['name'];
+      if (!isset($competitions[$competitionName])) {
+        $competitions[$competitionName] = 0;
+      }
+      $competitions[$competitionName]++;
+    }
 
-      <!-- Bootstrap JS -->
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js" integrity="sha384-RvKF0xwgKf4F6SLugG6AT9UgHu5L7Vjyrz+5w7VqCI+oElZ/krJZXlFmd1JXq3N0" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js" integrity="sha384-tmEVFL8Ww2sKLv0umHbcJZ2Q+VNpjF3q0XpH0/crLFXJWzR+0vMWKxOJIXTtTZXW" crossorigin="anonymous"></script>
+    // construir os dados para o gráfico
+    $labels = array();
+    $data = array();
+    foreach ($competitions as $competitionName => $count) {
+      $labels[] = $competitionName;
+      $data[] = $count;
+    }
+    ?>
 
+    <script>
+      var ctx = document.getElementById('chart').getContext('2d');
+      var chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: <?php echo json_encode($labels); ?>,
+          datasets: [{
+            label:'Número de jogos',
+data: <?php echo json_encode($data); ?>,
+backgroundColor: 'rgba(54, 162, 235, 0.2)',
+borderColor: 'rgba(54, 162, 235, 1)',
+borderWidth: 1
+}]
+},
+options: {
+responsive: true,
+scales: {
+yAxes: [{
+ticks: {
+beginAtZero: true
+}
+}]
+}
+}
+});
+</script>
 
   </body>
 </html>
-
-
-
-    
